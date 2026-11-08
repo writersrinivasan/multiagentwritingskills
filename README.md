@@ -1,36 +1,38 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ✦ Skill Studio
 
-## Getting Started
+A multi-agent writing studio built from the 12 Claude writing skills in [Ruben Hassid's LinkedIn post](https://www.linkedin.com/feed/update/urn:li:activity:7525074631817334784/).
+Built with Next.js 15, LangGraph.js and Groq. **BYOK**: you paste your own Groq key, it lives in your browser's localStorage, and the server passes it through per request without storing it.
 
-First, run the development server:
+## Run
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev        # http://localhost:3000, then click "Add Groq key"
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Get a free key at https://console.groq.com/keys.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## What's inside
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Tab | What it does | Under the hood |
+|---|---|---|
+| **Polish Pipeline** | Paste a draft and get a critiqued, rewritten, scored version | LangGraph: 5 parallel analysts (AI Hunter, Fact Checker, Hook Doctor, Red Pen, Griller) → Rewriter → Scorer, which loops back to the Rewriter if the score is below 80 (max 2 revisions) |
+| **Skill Runner** | Run any of the 12 skills; chain them with "Use as input" | Single Groq call with the skill's SKILL.md as the system prompt |
+| **Skill Library** | Download each skill as a Claude-ready `.zip` (folder + SKILL.md) | Client-side JSZip |
+| **Skill Forge** | Describe a daily task and get a new installable Claude skill | LangGraph: Architect → Writer → Critic (format validator + review), which loops back to the Writer if needed |
+| **Voice DNA** | Extract your writing voice and reuse it across every agent; export it as a `my-voice` Claude skill | Stored locally and injected into the Rewriter and voice-aware skills |
 
-## Learn More
+A deterministic AI-tell scanner (`src/lib/scanner.ts`) highlights words like *delve, crucial, tapestry* and patterns like *"it's not X, it's Y"* as you type. It needs no key.
 
-To learn more about Next.js, take a look at the following resources:
+Installing a skill in Claude: **Settings → Capabilities → Skills → Upload skill** and pick the zip.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Layout
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+src/lib/skills.ts         the 12 skill definitions (prompt + SKILL.md source)
+src/lib/graphs/polish.ts  7-agent polish graph
+src/lib/graphs/forge.ts   3-agent skill-builder graph + SKILL.md validator
+src/lib/llm.ts            ChatGroq factory, JSON parsing, NDJSON streaming
+src/app/api/*             polish · forge · skill · models (key check)
+src/components/*          tabs and UI
+```
